@@ -1,0 +1,53 @@
+# sentiment_analysis.py
+
+import pandas as pd
+import string
+import nltk
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+import matplotlib.pyplot as plt
+
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+# Load Dataset
+# You can replace this with any CSV file containing 'text' and 'label' columns
+data = pd.read_csv("https://raw.githubusercontent.com/dD2405/Twitter_Sentiment_Analysis/master/train.csv")
+data = data[['tweet', 'label']]
+data.columns = ['text', 'label']
+
+# Text Preprocessing
+def clean_text(text):
+    text = text.lower()
+    text = ''.join([char for char in text if char not in string.punctuation])
+    stop_words = stopwords.words('english')
+    text = ' '.join([word for word in text.split() if word not in stop_words])
+    return text
+
+data['text'] = data['text'].apply(clean_text)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(data['text'], data['label'], test_size=0.2, random_state=42)
+
+# TF-IDF Vectorization
+vectorizer = TfidfVectorizer(max_features=5000)
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
+
+# Logistic Regression Model
+model = LogisticRegression()
+model.fit(X_train_vec, y_train)
+
+# Predictions
+y_pred = model.predict(X_test_vec)
+
+# Evaluation
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+# Sample Prediction
+sample_text = ["I love this product!", "This is the worst experience ever."]
+sample_vec = vectorizer.transform(sample_text)
+print("Sample Predictions:", model.predict(sample_vec))
